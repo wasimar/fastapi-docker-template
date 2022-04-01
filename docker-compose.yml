@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    command: uvicorn app.main:app --reload --workers 1 --host 0.0.0.0 --port 8000 
+    volumes:
+      - ./src:/usr/src/app  # mount the current directory to /usr/src/app
+    ports:
+      - 8004:8000 # expose port 8000 on the host to port 8004 inside the container
+    environment:
+      - ENVIRONMENT=dev # set the environment variable ENVIRONMENT for config
+      - TESTING=0 # set the environment variable TESTING for config
+      - LOG_LEVEL=DEBUG # set the environment variable LOG_LEVEL for config(DEBUG, INFO, WARNING, ERROR, CRITICAL)
