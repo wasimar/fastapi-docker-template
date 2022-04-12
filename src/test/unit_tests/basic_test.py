@@ -1,6 +1,5 @@
 
 import time  
-from redis import Redis, TimeoutError
 from dataclasses import dataclass
 import fakeredis
 import uuid
