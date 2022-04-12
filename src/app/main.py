@@ -20,9 +20,8 @@ class User:
     def __post_init__(self) -> None:
         self._id = uuid.uuid4().hex
 
-def redis_session_db(user, min_validity) -> int:
+def redis_session_db(redis_client: Redis, user, min_validity) -> int:
     try:
-        redis_client = Redis("redis", db=0, socket_timeout=2, socket_connect_timeout=2)
         id_check = redis_client.get(user.name)
         if id_check is None:
             redis_client.setex(user.name, value=user._id, time=timedelta(minutes=min_validity))
@@ -31,8 +30,6 @@ def redis_session_db(user, min_validity) -> int:
     except RedisError as e:
         log.error(f"Redis error: {e}")
         return None
-    finally:
-        redis_client.close()
 
 @app.get("/")
 async def base_response(settings: Settings = Depends(get_settings)):
@@ -45,7 +42,9 @@ async def base_response(settings: Settings = Depends(get_settings)):
 @app.post("/users")
 async def create_user(user: User):
     log.debug("Got user: %s", user)
-    r = redis_session_db(user=user, min_validity=5)
+    redis_client = Redis("redis", db=0, socket_timeout=2, socket_connect_timeout=2)
+    r = redis_session_db(redis_client,user=user, min_validity=5)
+    redis_client.close()
     if r is not None:
         log.debug( f"User {user.name} already exists with id {r}")
         user._id = r

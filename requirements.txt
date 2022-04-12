@@ -3,3 +3,4 @@ uvicorn
 fastapi
 orjson
 redis
+fakeredis # for unit testing
