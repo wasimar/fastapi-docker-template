@@ -23,12 +23,11 @@ class User:
 def redis_session_db(user, min_validity) -> int:
     try:
         redis_client = Redis("redis", db=0, socket_timeout=2, socket_connect_timeout=2)
-        id = redis_client.get(user.name)
-        if id is None:
+        id_check = redis_client.get(user.name)
+        if id_check is None:
             redis_client.setex(user.name, value=user._id, time=timedelta(minutes=min_validity))
             return None
-        else:
-            return id
+        return id_check
     except RedisError as e:
         log.error(f"Redis error: {e}")
         return None
