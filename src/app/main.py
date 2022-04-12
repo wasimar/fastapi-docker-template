@@ -1,6 +1,9 @@
+import uuid
 from fastapi import FastAPI, Depends
 from dataclasses import dataclass
 from typing import Optional
+from datetime import timedelta
+from redis import Redis, RedisError
 from app.config import Settings, get_settings, CustomSwagger, LoggingConfig, ORJSONResponse
 
 
@@ -11,8 +14,26 @@ log = LoggingConfig().get_logger()
 @dataclass
 class User:
     name: str
-    age: int
+    role: str
     email: Optional[str] = None
+
+    def __post_init__(self) -> None:
+        self._id = uuid.uuid4().hex
+
+def redis_session_db(user, min_validity) -> int:
+    try:
+        redis_client = Redis("redis", db=0, socket_timeout=2, socket_connect_timeout=2)
+        id = redis_client.get(user.name)
+        if id is None:
+            redis_client.setex(user.name, value=user._id, time=timedelta(minutes=min_validity))
+            return None
+        else:
+            return id
+    except RedisError as e:
+        log.error(f"Redis error: {e}")
+        return None
+    finally:
+        redis_client.close()
 
 @app.get("/")
 async def base_response(settings: Settings = Depends(get_settings)):
@@ -25,6 +46,10 @@ async def base_response(settings: Settings = Depends(get_settings)):
 @app.post("/users")
 async def create_user(user: User):
     log.debug("Got user: %s", user)
+    r = redis_session_db(user=user, min_validity=5)
+    if r is not None:
+        log.debug( f"User {user.name} already exists with id {r}")
+        user._id = r
     return user
 
 # override the default swagger ui

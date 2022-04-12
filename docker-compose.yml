@@ -12,3 +12,13 @@ services:
       - ENVIRONMENT=dev # set the environment variable ENVIRONMENT for config
       - TESTING=0 # set the environment variable TESTING for config
       - LOG_LEVEL=DEBUG # set the environment variable LOG_LEVEL for config(DEBUG, INFO, WARNING, ERROR, CRITICAL)
+
+  redis:
+    image: redis:alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - ./data:/data
+    ports:
+      - 6379:6379
+    # environment:
+    #   - REDIS_PASSWORD=
