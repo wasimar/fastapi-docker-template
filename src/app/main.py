@@ -48,7 +48,7 @@ async def create_user(user: User):
     if r is not None:
         log.debug( f"User {user.name} already exists with id {r}")
         user._id = r
-    return user
+    return user._id
 
 # override the default swagger ui
 app.openapi = CustomSwagger(app).custom_openapi
